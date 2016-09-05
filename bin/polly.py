@@ -11,6 +11,7 @@ import sys
 
 import detail.call
 import detail.cpack_generator
+import detail.create_archive
 import detail.create_framework
 import detail.generate_command
 import detail.get_nmake_environment
@@ -76,6 +77,10 @@ parser.add_argument(
     nargs='?',
     const=detail.cpack_generator.default(),
     help="Run cpack after build"
+)
+parser.add_argument(
+    '--archive',
+    help="Create an archive of locally installed files"
 )
 parser.add_argument(
     '--nobuild', action='store_true', help="Do not build (only generate)"
@@ -175,6 +180,12 @@ parser.add_argument(
     help='Print last N lines if build failed'
 )
 
+parser.add_argument(
+    '--timeout',
+    type=PositiveInt,
+    help='Timeout for CTest'
+)
+
 args = parser.parse_args()
 
 polly_toolchain = detail.toolchain_name.get(args.toolchain)
@@ -236,7 +247,7 @@ print("Build dir: {}".format(build_dir))
 build_dir_option = "-B{}".format(build_dir)
 
 install_dir = os.path.join(cdir, '_install', polly_toolchain)
-local_install = args.install or args.framework or args.framework_device
+local_install = args.install or args.framework or args.framework_device or args.archive
 
 target = detail.target.Target()
 
@@ -256,6 +267,7 @@ if add_install_prefix:
 if (args.framework or args.framework_device) and platform.system() != 'Darwin':
   sys.exit('Framework creation only for Mac OS X')
 framework_dir = os.path.join(cdir, '_framework', polly_toolchain)
+archives_dir = os.path.join(cdir, '_archives')
 
 if args.clear:
   detail.rmtree.rmtree(build_dir)
@@ -303,8 +315,8 @@ if toolchain_option:
 
 if args.verbosity == 'full':
     generate_command.append('-DCMAKE_VERBOSE_MAKEFILE=ON')
-generate_command.append('-DPOLLY_STATUS_DEBUG=ON')
-generate_command.append('-DHUNTER_STATUS_DEBUG=ON')
+    generate_command.append('-DPOLLY_STATUS_DEBUG=ON')
+    generate_command.append('-DHUNTER_STATUS_DEBUG=ON')
 
 if args.ios_multiarch:
     generate_command.append('-DCMAKE_XCODE_ATTRIBUTE_ONLY_ACTIVE_ARCH=NO')
@@ -366,6 +378,17 @@ if not args.nobuild:
   detail.call.call(build_command, logging, sleep=1)
   timer.stop()
 
+  if args.archive:
+    timer.start('Archive creation')
+    detail.create_archive.run(
+        install_dir,
+        archives_dir,
+        args.archive,
+        toolchain_entry.name,
+        args.config
+    )
+    timer.stop()
+
   if args.framework or args.framework_device:
     timer.start('Framework creation')
     detail.create_framework.run(
@@ -384,7 +407,7 @@ if not args.nobuild:
   os.chdir(build_dir)
   if args.test or args.test_xml:
     timer.start('Test')
-    detail.test_command.run(build_dir, args.config, logging, args.test_xml)
+    detail.test_command.run(build_dir, args.config, logging, args.test_xml, args.verbosity == 'full', args.timeout)
     timer.stop()
   if args.pack:
     timer.start('Pack')
