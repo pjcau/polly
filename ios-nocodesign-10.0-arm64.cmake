@@ -1,22 +1,22 @@
 # Copyright (c) 2014-2016, Ruslan Baratov
 # All rights reserved.
 
-if(DEFINED POLLY_IOS_NOCODESIGN_9_3_ARMV7_CMAKE_)
+if(DEFINED POLLY_IOS_NOCODESIGN_10_0_ARM64_CMAKE_)
   return()
 else()
-  set(POLLY_IOS_NOCODESIGN_9_3_ARMV7_CMAKE_ 1)
+  set(POLLY_IOS_NOCODESIGN_10_0_ARM64_CMAKE_ 1)
 endif()
 
 include("${CMAKE_CURRENT_LIST_DIR}/utilities/polly_clear_environment_variables.cmake")
 
 include("${CMAKE_CURRENT_LIST_DIR}/utilities/polly_init.cmake")
 
-set(IOS_SDK_VERSION 9.3)
+set(IOS_SDK_VERSION 10.0)
 set(IOS_DEPLOYMENT_SDK_VERSION 8.0)
 
 set(POLLY_XCODE_COMPILER "clang")
 polly_init(
-    "iOS ${IOS_SDK_VERSION} / armv7 / \
+    "iOS ${IOS_SDK_VERSION} / arm64 / \
 ${POLLY_XCODE_COMPILER} / \
 No code sign / \
 c++11 support"
@@ -61,7 +61,7 @@ else()
   endif()
 endif()
 
-set(IPHONEOS_ARCHS armv7)
+set(IPHONEOS_ARCHS arm64)
 set(IPHONESIMULATOR_ARCHS "")
 
 include("${CMAKE_CURRENT_LIST_DIR}/compiler/xcode.cmake")
